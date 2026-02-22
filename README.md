@@ -1,2 +1,5 @@
-# NAVIGO
-Demo navigation web 
+Thêm ảnh vào trong Folder 'images'
+
+Đặt tên các ảnh của các tòa nhà đúng cú pháp theo đúng trong file 'app.js'
+
+(Ctrl + F, tìm 'const locationImages')
