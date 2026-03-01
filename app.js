@@ -261,6 +261,9 @@ let currentReviewFilter = "all";
 let currentStarFilter = "all";
 let currentReviewId = null;
 
+let landingQRCode = null;         // QR lấy từ URL (?qr=...)
+let requireWebScanConfirm = false; // Bắt buộc quét trong web mới check-in
+
 // ============ NOTIFICATION SYSTEM ============
 function getNotifications() {
   return JSON.parse(localStorage.getItem("notifications")) || [];
@@ -930,6 +933,61 @@ function saveUserData(data) {
   const allData = JSON.parse(localStorage.getItem("userData")) || {};
   allData[currentUser] = data;
   localStorage.setItem("userData", JSON.stringify(allData));
+}
+
+function normalizeQrInput(input) {
+  const text = (input || "").trim();
+
+  // Nếu là URL, thử lấy query param ?qr=
+  if (text.startsWith("http://") || text.startsWith("https://")) {
+    try {
+      const u = new URL(text);
+      const q = u.searchParams.get("qr");
+      if (q) return q.trim(); // trả về kiểu "QR_B6"
+    } catch (e) {}
+  }
+
+  // fallback: giữ nguyên 
+  return text;
+}
+
+function getLocationByQr(qr) {
+  return locations.find(loc => loc.qrCode === qr) || null;
+}
+
+function renderLandingBanner() {
+  const banner = document.getElementById("qrLandingBanner");
+  if (!banner) return;
+
+  if (!landingQRCode) {
+    banner.style.display = "none";
+    return;
+  }
+
+  const loc = getLocationByQr(landingQRCode);
+  const locName = loc ? loc.name : landingQRCode;
+
+  banner.style.display = "block";
+  banner.innerHTML = `
+    <div style="font-weight:700;margin-bottom:6px;">📍 Bạn đang ở: ${locName}</div>
+    <div style="font-size:13px;opacity:0.95;">
+      Bấm <b>"Mở camera check-in"</b> và quét lại QR này để xác nhận check-in.
+    </div>
+    <div style="display:flex;gap:10px;margin-top:10px;">
+      <button class="landing-btn" onclick="openQRScanner()">📷 Mở camera check-in</button>
+      <button class="landing-btn secondary" onclick="dismissLandingQr()">Để sau</button>
+    </div>
+  `;
+}
+
+function dismissLandingQr() {
+  landingQRCode = null;
+  requireWebScanConfirm = false;
+  // Xóa ?qr= khỏi URL để refresh không hiện nữa
+  const url = new URL(window.location.href);
+  url.searchParams.delete("qr");
+  window.history.replaceState({}, "", url.toString());
+  renderLandingBanner();
 }
 
 function handleQRCheckin(qrCode) {
@@ -1842,21 +1900,110 @@ function adminAddBadge() {
 }
 
 // Initialize
+// Khi mở web từ QR: chỉ hiện thông tin địa điểm, KHÔNG check-in tự động.
+// Muốn check-in thật phải quét lại bằng camera trong web.
 const urlParams = new URLSearchParams(window.location.search);
-const qrCode = urlParams.get("qr");
-if (qrCode) {
-  pendingQRCode = qrCode;
-  if (!isGuest && currentUser) {
-    setTimeout(() => {
-      handleQRCheckin(qrCode);
-      pendingQRCode = null;
-    }, 1000);
+const landingQrCode = urlParams.get("qr");
+const landingLocationId = urlParams.get("location");
+
+if (landingQrCode || landingLocationId) {
+  // Tìm địa điểm từ QR hoặc location param
+  const landingLocation =
+    locations.find((loc) => loc.qrCode === landingQrCode) ||
+    locations.find((loc) => loc.id === landingLocationId);
+
+  if (landingLocation) {
+    // Lưu lại để sau khi DOMContentLoaded thì hiện popup
+    window._landingLocation = landingLocation;
   }
 }
 
 document
   .getElementById("badgePopupOverlay")
   .addEventListener("click", closeBadgePopup);
+
 document.addEventListener("DOMContentLoaded", () => {
   checkAuth();
+
+  // Nếu mở web từ QR → hiện popup thông tin địa điểm (không check-in)
+  if (window._landingLocation) {
+    setTimeout(() => {
+      showLandingLocationPopup(window._landingLocation);
+    }, 600);
+  }
 });
+
+// Popup thông tin địa điểm khi mở từ QR (chỉ xem, chưa check-in)
+function showLandingLocationPopup(location) {
+  // Xóa popup cũ nếu có
+  const existing = document.getElementById("landingPopup");
+  if (existing) existing.remove();
+
+  const isAlreadyChecked =
+    !isGuest && currentUser
+      ? getUserData().checkedItems.includes(location.id)
+      : false;
+
+  const popup = document.createElement("div");
+  popup.id = "landingPopup";
+  popup.style.cssText = `
+    position: fixed; inset: 0; z-index: 9999;
+    background: rgba(0,0,0,0.6);
+    display: flex; align-items: center; justify-content: center;
+    padding: 20px;
+  `;
+
+  popup.innerHTML = `
+    <div style="
+      background: white; border-radius: 20px; padding: 24px;
+      max-width: 380px; width: 100%; text-align: center;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+      animation: popupIn 0.3s ease;
+    ">
+      <div style="font-size:48px; margin-bottom:12px;">📍</div>
+      <h2 style="color:#1e3c72; margin:0 0 8px 0; font-size:20px;">${location.name}</h2>
+      <p style="color:#64748b; font-size:14px; margin:0 0 20px 0;">
+        Bạn đang ở địa điểm này.<br>
+        ${
+          isGuest
+            ? "Đăng nhập để check-in và tích điểm!"
+            : isAlreadyChecked
+            ? "✅ Bạn đã check-in địa điểm này rồi."
+            : "Quét mã QR bằng nút 📷 trong ứng dụng để check-in!"
+        }
+      </p>
+      <img
+        src="${location.image}"
+        onerror="this.style.display='none'"
+        style="width:100%; max-height:180px; object-fit:cover; border-radius:12px; margin-bottom:20px;"
+      />
+      <div style="display:flex; gap:10px;">
+        ${
+          isGuest
+            ? `<button onclick="document.getElementById('landingPopup').remove(); localStorage.removeItem('guestMode'); checkAuth();"
+                style="flex:1; padding:12px; background:linear-gradient(135deg,#1e3c72,#2a5298); color:white; border:none; border-radius:12px; font-size:14px; font-weight:600; cursor:pointer;">
+                🔐 Đăng nhập
+              </button>`
+            : !isAlreadyChecked
+            ? `<button onclick="document.getElementById('landingPopup').remove(); openQRScanner();"
+                style="flex:1; padding:12px; background:linear-gradient(135deg,#10b981,#059669); color:white; border:none; border-radius:12px; font-size:14px; font-weight:600; cursor:pointer;">
+                📷 Quét để Check-in
+              </button>`
+            : ""
+        }
+        <button onclick="document.getElementById('landingPopup').remove();"
+          style="flex:1; padding:12px; background:#f1f5f9; color:#64748b; border:none; border-radius:12px; font-size:14px; font-weight:600; cursor:pointer;">
+          Đóng
+        </button>
+      </div>
+    </div>
+    <style>
+      @keyframes popupIn {
+        from { transform: scale(0.85); opacity: 0; }
+        to   { transform: scale(1);    opacity: 1; }
+      }
+    </style>
+  `;
+
+  document.body.appendChild(popup);
+}
