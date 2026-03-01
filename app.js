@@ -999,7 +999,26 @@ function handleQRCheckin(qrCode) {
     return;
   }
 
-  const location = locations.find((loc) => loc.qrCode === qrCode);
+  const scannedValue = String(qrCode || "").trim();
+
+  // Tìm trực tiếp bằng qrCode hoặc id
+  let location =
+    locations.find((loc) => loc.qrCode === scannedValue) ||
+    locations.find((loc) => loc.id === scannedValue);
+
+  // Nếu không tìm được → thử parse URL (VD: https://navigo-lake.vercel.app/?qr=QR_B6)
+  if (!location) {
+    try {
+      const url = new URL(scannedValue);
+      const qrParam = url.searchParams.get("qr");
+      const locationParam = url.searchParams.get("location");
+      if (qrParam) location = locations.find((loc) => loc.qrCode === qrParam.trim());
+      if (!location && locationParam) location = locations.find((loc) => loc.id === locationParam.trim());
+    } catch (e) {
+      // không phải URL hợp lệ, bỏ qua
+    }
+  }
+
   if (!location) {
     alert("Mã QR không hợp lệ!");
     closeQRScanner();
