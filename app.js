@@ -1954,7 +1954,6 @@ document.addEventListener("DOMContentLoaded", () => {
 
 // Popup thông tin địa điểm khi mở từ QR (chỉ xem, chưa check-in)
 function showLandingLocationPopup(location) {
-  // Xóa popup cũ nếu có
   const existing = document.getElementById("landingPopup");
   if (existing) existing.remove();
 
@@ -1972,6 +1971,68 @@ function showLandingLocationPopup(location) {
     padding: 20px;
   `;
 
+  let bodyHtml = "";
+
+  if (isGuest) {
+    bodyHtml = `
+      <p style="color:#64748b; font-size:14px; margin:0 0 16px 0;">
+        Đăng nhập để check-in và tích điểm!
+      </p>
+      <div style="display:flex; gap:10px;">
+        <button onclick="document.getElementById('landingPopup').remove(); localStorage.removeItem('guestMode'); checkAuth();"
+          style="flex:1; padding:12px; background:linear-gradient(135deg,#1e3c72,#2a5298); color:white; border:none; border-radius:12px; font-size:14px; font-weight:600; cursor:pointer;">
+          🔐 Đăng nhập
+        </button>
+        <button onclick="document.getElementById('landingPopup').remove();"
+          style="flex:1; padding:12px; background:#f1f5f9; color:#64748b; border:none; border-radius:12px; font-size:14px; font-weight:600; cursor:pointer;">
+          Đóng
+        </button>
+      </div>
+    `;
+  } else if (isAlreadyChecked) {
+    bodyHtml = `
+      <p style="color:#10b981; font-size:14px; font-weight:600; margin:0 0 16px 0;">
+        ✅ Bạn đã check-in địa điểm này rồi!
+      </p>
+      <button onclick="document.getElementById('landingPopup').remove();"
+        style="width:100%; padding:12px; background:#f1f5f9; color:#64748b; border:none; border-radius:12px; font-size:14px; font-weight:600; cursor:pointer;">
+        Đóng
+      </button>
+    `;
+  } else {
+    bodyHtml = `
+      <p style="color:#64748b; font-size:14px; margin:0 0 14px 0;">
+        Nhập mã PIN trên tờ QR để check-in
+      </p>
+      <input
+        id="pinInput"
+        type="text"
+        placeholder="Nhập mã PIN (VD: QR_B6)"
+        autocomplete="off"
+        style="
+          width: 100%; padding: 12px; font-size: 16px; font-weight: 600;
+          text-align: center; letter-spacing: 2px; text-transform: uppercase;
+          border: 2px solid #e2e8f0; border-radius: 12px;
+          outline: none; box-sizing: border-box; margin-bottom: 8px;
+        "
+        oninput="this.style.borderColor='#e2e8f0'; document.getElementById('pinError').style.display='none';"
+      />
+      <div id="pinError" style="color:#ef4444; font-size:13px; margin-bottom:10px; display:none;">
+        ❌ Mã PIN không đúng, vui lòng thử lại!
+      </div>
+      <div style="display:flex; gap:10px;">
+        <button onclick="submitPinCheckin('${location.id}', '${location.qrCode}')"
+          style="flex:1; padding:12px; background:linear-gradient(135deg,#10b981,#059669); color:white; border:none; border-radius:12px; font-size:14px; font-weight:600; cursor:pointer;">
+          ✅ Xác nhận Check-in
+        </button>
+        <button onclick="document.getElementById('landingPopup').remove();"
+          style="flex:1; padding:12px; background:#f1f5f9; color:#64748b; border:none; border-radius:12px; font-size:14px; font-weight:600; cursor:pointer;">
+          Đóng
+        </button>
+      </div>
+    `;
+  }
+
   popup.innerHTML = `
     <div style="
       background: white; border-radius: 20px; padding: 24px;
@@ -1980,49 +2041,46 @@ function showLandingLocationPopup(location) {
       animation: popupIn 0.3s ease;
     ">
       <div style="font-size:48px; margin-bottom:12px;">📍</div>
-      <h2 style="color:#1e3c72; margin:0 0 8px 0; font-size:20px;">${location.name}</h2>
-      <p style="color:#64748b; font-size:14px; margin:0 0 20px 0;">
-        Bạn đang ở địa điểm này.<br>
-        ${
-          isGuest
-            ? "Đăng nhập để check-in và tích điểm!"
-            : isAlreadyChecked
-            ? "✅ Bạn đã check-in địa điểm này rồi."
-            : "Quét mã QR bằng nút 📷 trong ứng dụng để check-in!"
-        }
-      </p>
+      <h2 style="color:#1e3c72; margin:0 0 6px 0; font-size:20px;">${location.name}</h2>
       <img
         src="${location.image}"
         onerror="this.style.display='none'"
-        style="width:100%; max-height:180px; object-fit:cover; border-radius:12px; margin-bottom:20px;"
+        style="width:100%; max-height:160px; object-fit:cover; border-radius:12px; margin:12px 0;"
       />
-      <div style="display:flex; gap:10px;">
-        ${
-          isGuest
-            ? `<button onclick="document.getElementById('landingPopup').remove(); localStorage.removeItem('guestMode'); checkAuth();"
-                style="flex:1; padding:12px; background:linear-gradient(135deg,#1e3c72,#2a5298); color:white; border:none; border-radius:12px; font-size:14px; font-weight:600; cursor:pointer;">
-                🔐 Đăng nhập
-              </button>`
-            : !isAlreadyChecked
-            ? `<button onclick="document.getElementById('landingPopup').remove(); openQRScanner();"
-                style="flex:1; padding:12px; background:linear-gradient(135deg,#10b981,#059669); color:white; border:none; border-radius:12px; font-size:14px; font-weight:600; cursor:pointer;">
-                📷 Quét để Check-in
-              </button>`
-            : ""
-        }
-        <button onclick="document.getElementById('landingPopup').remove();"
-          style="flex:1; padding:12px; background:#f1f5f9; color:#64748b; border:none; border-radius:12px; font-size:14px; font-weight:600; cursor:pointer;">
-          Đóng
-        </button>
-      </div>
+      ${bodyHtml}
     </div>
     <style>
       @keyframes popupIn {
         from { transform: scale(0.85); opacity: 0; }
         to   { transform: scale(1);    opacity: 1; }
       }
+      #pinInput:focus { border-color: #1e3c72 !important; }
     </style>
   `;
 
   document.body.appendChild(popup);
+
+  setTimeout(() => {
+    const pinInput = document.getElementById("pinInput");
+    if (pinInput) pinInput.focus();
+  }, 350);
+}
+
+function submitPinCheckin(locationId, correctPin) {
+  const inputEl = document.getElementById("pinInput");
+  const errorEl = document.getElementById("pinError");
+  const entered = (inputEl.value || "").trim().toUpperCase();
+  const expected = correctPin.toUpperCase();
+
+  if (entered !== expected) {
+    inputEl.style.borderColor = "#ef4444";
+    errorEl.style.display = "block";
+    inputEl.value = "";
+    inputEl.focus();
+    return;
+  }
+
+  // PIN đúng → check-in
+  document.getElementById("landingPopup").remove();
+  handleQRCheckin(correctPin);
 }
