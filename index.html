@@ -1,262 +1,758 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="vi">
-<head>
-    <link rel="stylesheet" href="style.css">
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <head>
+    <link rel="stylesheet" href="style.css" />
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Bản Đồ Trường - Navigo</title>
-</head>
-<body>
+  </head>
+  <body>
     <div class="login-container" id="loginScreen">
-        <div class="login-header">
-            <h1>🗺️ Bản Đồ Trường - Navigo</h1>
-            <p>Đăng nhập để lưu tiến độ</p>
+      <div class="login-header">
+        <h1>🗺️ Bản Đồ Trường - Navigo</h1>
+        <p>Đăng nhập để lưu tiến độ</p>
+      </div>
+
+      <div class="error-message" id="errorMessage"></div>
+
+      <button type="button" class="skip-btn" onclick="skipLogin()">
+        Bỏ qua đăng nhập
+      </button>
+
+      <form id="loginForm">
+        <div class="form-group">
+          <label>Tên đăng nhập</label>
+          <input
+            type="text"
+            id="username"
+            placeholder="Nhập tên đăng nhập"
+            required
+          />
         </div>
-
-        <div class="error-message" id="errorMessage"></div>
-
-        <button type="button" class="skip-btn" onclick="skipLogin()">Bỏ qua đăng nhập</button>
-
-        <form id="loginForm">
-            <div class="form-group">
-                <label>Tên đăng nhập</label>
-                <input type="text" id="username" placeholder="Nhập tên đăng nhập" required>
-            </div>
-            <div class="form-group">
-                <label>Mật khẩu</label>
-                <input type="password" id="password" placeholder="Nhập mật khẩu" required>
-            </div>
-            <button type="submit" class="submit-btn" id="loginBtn">Đăng nhập</button>
-        </form>
-
-        <div class="form-toggle">
-            <span id="toggleText">Chưa có tài khoản? </span>
-            <a onclick="toggleForm()">Đăng ký ngay</a>
+        <div class="form-group">
+          <label>Mật khẩu</label>
+          <input
+            type="password"
+            id="password"
+            placeholder="Nhập mật khẩu"
+            required
+          />
         </div>
+        <button type="submit" class="submit-btn" id="loginBtn">
+          Đăng nhập
+        </button>
+      </form>
+
+      <div class="form-toggle">
+        <span id="toggleText">Chưa có tài khoản? </span>
+        <a onclick="toggleForm()">Đăng ký ngay</a>
+      </div>
     </div>
 
-    <div class="container" id="mainApp" style="display: none;">
-        <div class="logo-section">
-            <div class="logo-item">
-                <img src="logo_navigo.png" alt="Logo Navigo" onerror="this.style.display='none'">
+    <div class="container" id="mainApp" style="display: none">
+      <div class="logo-section">
+        <div class="logo-item">
+          <img
+            src="logo_navigo.png"
+            alt="Logo Navigo"
+            onerror="this.style.display = 'none'"
+          />
+        </div>
+        <div class="logo-item">
+          <img
+            src="logo_bk.png"
+            alt="Logo BK"
+            onerror="this.style.display = 'none'"
+          />
+        </div>
+      </div>
+
+      <div class="header">
+        <div class="user-info" id="userInfo">
+          <span>👤 <span id="currentUser"></span></span>
+          <span id="userBadgeDisplay"></span>
+          <button
+            class="notification-btn"
+            id="notificationBtn"
+            onclick="toggleNotifications()"
+            style="display: none; position: relative"
+          >
+            🔔
+            <span
+              id="notificationBadge"
+              class="notification-badge"
+              style="display: none"
+            ></span>
+          </button>
+          <button class="logout-btn" id="logoutBtn" onclick="logout()">
+            Đăng xuất
+          </button>
+        </div>
+        <h1>🗺️ Bản Đồ Trường</h1>
+
+        <div id="statsContainer">
+          <div class="stats-container">
+            <div class="stat-box">
+              <div class="stat-number" id="totalPoints">0</div>
+              <div class="stat-label">Tổng điểm</div>
             </div>
-            <div class="logo-item">
-                <img src="logo_bk.png" alt="Logo BK" onerror="this.style.display='none'">
+            <div class="stat-box">
+              <div class="stat-number" id="currentCycle">1</div>
+              <div class="stat-label">Vòng hiện tại</div>
             </div>
+            <div class="stat-box">
+              <div class="stat-number" id="cycleProgress">0/45</div>
+              <div class="stat-label">Vòng này</div>
+            </div>
+          </div>
+
+          <div class="current-badge-display" id="currentBadgeDisplay">
+            <div class="badge-icon-large" id="currentBadgeIcon">🏆</div>
+            <div class="badge-name-large" id="currentBadgeName">
+              Chưa có huy hiệu
+            </div>
+          </div>
+
+          <div class="progress-bar">
+            <div class="progress-fill" id="progressBar">0/20</div>
+          </div>
+          <div class="progress-label" id="progressLabel">
+            Còn 20 điểm nữa để đạt huy hiệu tiếp theo
+          </div>
+        </div>
+      </div>
+
+      <!-- Notification Panel -->
+      <div class="notification-panel" id="notificationPanel">
+        <div
+          style="
+            padding: 15px;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+          "
+        >
+          <h3 style="margin: 0; color: #1e3c72">Thông báo</h3>
+          <button
+            onclick="toggleNotifications()"
+            style="
+              background: transparent;
+              border: none;
+              font-size: 20px;
+              cursor: pointer;
+            "
+          >
+            ×
+          </button>
+        </div>
+        <div
+          id="notificationList"
+          style="max-height: 400px; overflow-y: auto"
+        ></div>
+      </div>
+
+      <div class="tabs">
+        <button class="tab active" onclick="switchTab('navigate', this)">
+          📍 Điều Hướng
+        </button>
+        <button
+          class="tab"
+          onclick="switchTab('checkin', this)"
+          id="checkinTab"
+        >
+          ✅ Check-in
+        </button>
+        <button class="tab" onclick="switchTab('review', this)">
+          ⭐ Review
+        </button>
+        <button
+          class="tab"
+          onclick="switchTab('voucher', this)"
+          id="voucherTab"
+        >
+          🎁 Voucher
+        </button>
+        <button
+          class="tab"
+          onclick="switchTab('admin', this)"
+          id="adminTab"
+          style="display: none"
+        >
+          👮 Admin
+        </button>
+      </div>
+
+      <div class="content">
+        <div id="navigate-content" class="tab-content active">
+          <div class="location-grid" id="locationsList"></div>
         </div>
 
-        <div class="header">
-            <div class="user-info" id="userInfo">
-                <span>👤 <span id="currentUser"></span></span>
-                <span id="userBadgeDisplay"></span>
-                <button class="notification-btn" id="notificationBtn" onclick="toggleNotifications()" style="display:none;position:relative;">
-                    🔔
-                    <span id="notificationBadge" class="notification-badge" style="display:none;"></span>
+        <div id="checkin-content" class="tab-content">
+          <div id="checkinList"></div>
+        </div>
+
+        <div id="review-content" class="tab-content">
+          <div
+            style="
+              display: flex;
+              gap: 8px;
+              margin-bottom: 15px;
+              overflow-x: auto;
+              padding-bottom: 5px;
+            "
+          >
+            <button
+              class="star-filter-btn active"
+              onclick="filterByStar('all')"
+              style="
+                padding: 8px 16px;
+                background: white;
+                border: 2px solid #e2e8f0;
+                border-radius: 20px;
+                font-size: 13px;
+                cursor: pointer;
+                white-space: nowrap;
+              "
+            >
+              Tất cả
+            </button>
+            <button
+              class="star-filter-btn"
+              onclick="filterByStar(5)"
+              style="
+                padding: 8px 16px;
+                background: white;
+                border: 2px solid #e2e8f0;
+                border-radius: 20px;
+                font-size: 13px;
+                cursor: pointer;
+                white-space: nowrap;
+              "
+            >
+              ⭐ 5 sao
+            </button>
+            <button
+              class="star-filter-btn"
+              onclick="filterByStar(4)"
+              style="
+                padding: 8px 16px;
+                background: white;
+                border: 2px solid #e2e8f0;
+                border-radius: 20px;
+                font-size: 13px;
+                cursor: pointer;
+                white-space: nowrap;
+              "
+            >
+              ⭐ 4 sao
+            </button>
+            <button
+              class="star-filter-btn"
+              onclick="filterByStar(3)"
+              style="
+                padding: 8px 16px;
+                background: white;
+                border: 2px solid #e2e8f0;
+                border-radius: 20px;
+                font-size: 13px;
+                cursor: pointer;
+                white-space: nowrap;
+              "
+            >
+              ⭐ 3 sao
+            </button>
+            <button
+              class="star-filter-btn"
+              onclick="filterByStar(2)"
+              style="
+                padding: 8px 16px;
+                background: white;
+                border: 2px solid #e2e8f0;
+                border-radius: 20px;
+                font-size: 13px;
+                cursor: pointer;
+                white-space: nowrap;
+              "
+            >
+              ⭐ 2 sao
+            </button>
+            <button
+              class="star-filter-btn"
+              onclick="filterByStar(1)"
+              style="
+                padding: 8px 16px;
+                background: white;
+                border: 2px solid #e2e8f0;
+                border-radius: 20px;
+                font-size: 13px;
+                cursor: pointer;
+                white-space: nowrap;
+              "
+            >
+              ⭐ 1 sao
+            </button>
+          </div>
+          <div
+            style="
+              display: flex;
+              gap: 8px;
+              margin-bottom: 15px;
+              overflow-x: auto;
+              padding-bottom: 5px;
+            "
+          >
+            <button
+              class="filter-btn active"
+              onclick="filterReviews('all')"
+              style="
+                padding: 8px 16px;
+                background: #1e3c72;
+                color: white;
+                border: 2px solid #1e3c72;
+                border-radius: 20px;
+                font-size: 13px;
+                cursor: pointer;
+                white-space: nowrap;
+              "
+            >
+              Tất cả
+            </button>
+            <button
+              class="filter-btn"
+              onclick="filterReviews('food')"
+              style="
+                padding: 8px 16px;
+                background: white;
+                border: 2px solid #e2e8f0;
+                border-radius: 20px;
+                font-size: 13px;
+                cursor: pointer;
+                white-space: nowrap;
+              "
+            >
+              🍽️ Quán ăn
+            </button>
+            <button
+              class="filter-btn"
+              onclick="filterReviews('wc')"
+              style="
+                padding: 8px 16px;
+                background: white;
+                border: 2px solid #e2e8f0;
+                border-radius: 20px;
+                font-size: 13px;
+                cursor: pointer;
+                white-space: nowrap;
+              "
+            >
+              🚻 Nhà vệ sinh
+            </button>
+            <button
+              class="filter-btn"
+              onclick="filterReviews('other')"
+              style="
+                padding: 8px 16px;
+                background: white;
+                border: 2px solid #e2e8f0;
+                border-radius: 20px;
+                font-size: 13px;
+                cursor: pointer;
+                white-space: nowrap;
+              "
+            >
+              📌 Khác
+            </button>
+          </div>
+          <div id="reviewList"></div>
+        </div>
+
+        <div id="voucher-content" class="tab-content">
+          <div id="voucherList"></div>
+        </div>
+
+        <div id="admin-content" class="tab-content">
+          <div class="admin-panel">
+            <div class="admin-section">
+              <h3>⚙️ Quản lý Check-in</h3>
+              <button class="admin-btn" onclick="adminResetCheckin()">
+                🔄 Reset tiến độ check-in hiện tại
+              </button>
+              <button class="admin-btn" onclick="adminResetAll()">
+                🗑️ Reset toàn bộ dữ liệu
+              </button>
+            </div>
+
+            <div class="admin-section">
+              <h3>🎁 Yêu cầu sử dụng Voucher</h3>
+              <div id="adminVoucherUsage"></div>
+            </div>
+
+            <div class="admin-section">
+              <h3>🔍 Tìm voucher đã dùng</h3>
+              <div style="display: flex; gap: 8px; margin-bottom: 10px">
+                <input
+                  type="text"
+                  id="searchUsername"
+                  class="admin-input"
+                  placeholder="Nhập tên người dùng"
+                  style="flex: 1"
+                />
+                <button
+                  class="admin-btn"
+                  onclick="adminSearchUser()"
+                  style="flex: 0; white-space: nowrap"
+                >
+                  Tìm kiếm
                 </button>
-                <button class="logout-btn" id="logoutBtn" onclick="logout()">Đăng xuất</button>
+              </div>
+              <div id="userVoucherList"></div>
             </div>
-            <h1>🗺️ Bản Đồ Trường</h1>
-            
-            <div id="statsContainer">
-                <div class="stats-container">
-                    <div class="stat-box">
-                        <div class="stat-number" id="totalPoints">0</div>
-                        <div class="stat-label">Tổng điểm</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-number" id="currentCycle">1</div>
-                        <div class="stat-label">Vòng hiện tại</div>
-                    </div>
-                    <div class="stat-box">
-                        <div class="stat-number" id="cycleProgress">0/45</div>
-                        <div class="stat-label">Vòng này</div>
-                    </div>
-                </div>
 
-                <div class="current-badge-display" id="currentBadgeDisplay">
-                    <div class="badge-icon-large" id="currentBadgeIcon">🏆</div>
-                    <div class="badge-name-large" id="currentBadgeName">Chưa có huy hiệu</div>
-                </div>
-
-                <div class="progress-bar">
-                    <div class="progress-fill" id="progressBar">0/20</div>
-                </div>
-                <div class="progress-label" id="progressLabel">Còn 20 điểm nữa để đạt huy hiệu tiếp theo</div>
+            <div class="admin-section" id="adminReports">
+              <h3>⚠️ Báo cáo vi phạm</h3>
+              <div id="adminReportsList"></div>
             </div>
+
+            <div class="admin-section">
+              <h3>🎁 Thêm Voucher</h3>
+              <input
+                type="text"
+                class="admin-input"
+                id="voucherTitle"
+                placeholder="Tên voucher (VD: Giảm 30k Trà Đé)"
+              />
+              <input
+                type="text"
+                class="admin-input"
+                id="voucherValue"
+                placeholder="Giá trị (VD: 30K)"
+              />
+              <input
+                type="text"
+                class="admin-input"
+                id="voucherDesc"
+                placeholder="Mô tả điều kiện"
+              />
+              <input
+                type="number"
+                class="admin-input"
+                id="voucherRequired"
+                placeholder="Số điểm yêu cầu"
+              />
+              <input
+                type="text"
+                class="admin-input"
+                id="voucherBadge"
+                placeholder="Icon (VD: 🎁)"
+              />
+              <button
+                class="admin-btn"
+                style="background: #10b981"
+                onclick="adminAddVoucher()"
+              >
+                ✅ Thêm Voucher
+              </button>
+            </div>
+
+            <div class="admin-section">
+              <h3>🏆 Thêm Huy Hiệu</h3>
+              <input
+                type="text"
+                class="admin-input"
+                id="badgeName"
+                placeholder="Tên huy hiệu"
+              />
+              <input
+                type="number"
+                class="admin-input"
+                id="badgeRequired"
+                placeholder="Số điểm yêu cầu"
+              />
+              <input
+                type="text"
+                class="admin-input"
+                id="badgeIcon"
+                placeholder="Icon (VD: 💎)"
+              />
+              <input
+                type="text"
+                class="admin-input"
+                id="badgeImage"
+                placeholder="Tên file ảnh (VD: diamond.png)"
+              />
+              <button
+                class="admin-btn"
+                style="background: #10b981"
+                onclick="adminAddBadge()"
+              >
+                ✅ Thêm Huy Hiệu
+              </button>
+            </div>
+          </div>
         </div>
-
-        <!-- Notification Panel -->
-        <div class="notification-panel" id="notificationPanel">
-            <div style="padding:15px;border-bottom:1px solid #e2e8f0;display:flex;justify-content:space-between;align-items:center;">
-                <h3 style="margin:0;color:#1e3c72;">Thông báo</h3>
-                <button onclick="toggleNotifications()" style="background:transparent;border:none;font-size:20px;cursor:pointer;">×</button>
-            </div>
-            <div id="notificationList" style="max-height:400px;overflow-y:auto;"></div>
-        </div>
-
-        <div class="tabs">
-            <button class="tab active" onclick="switchTab('navigate')">📍 Điều Hướng</button>
-            <button class="tab" onclick="switchTab('checkin')" id="checkinTab">✅ Check-in</button>
-            <button class="tab" onclick="switchTab('review')">⭐ Review</button>
-            <button class="tab" onclick="switchTab('voucher')" id="voucherTab">🎁 Voucher</button>
-            <button class="tab" onclick="switchTab('admin')" id="adminTab" style="display:none;">👮 Admin</button>
-        </div>
-
-        <div class="content">
-            <div id="navigate-content" class="tab-content active">
-                <div class="location-grid" id="locationsList"></div>
-            </div>
-
-            <div id="checkin-content" class="tab-content">
-                <div id="checkinList"></div>
-            </div>
-
-            <div id="review-content" class="tab-content">
-                <div style="display:flex;gap:8px;margin-bottom:15px;overflow-x:auto;padding-bottom:5px;">
-                    <button class="star-filter-btn active" onclick="filterByStar('all')" style="padding:8px 16px;background:white;border:2px solid #e2e8f0;border-radius:20px;font-size:13px;cursor:pointer;white-space:nowrap;">Tất cả</button>
-                    <button class="star-filter-btn" onclick="filterByStar(5)" style="padding:8px 16px;background:white;border:2px solid #e2e8f0;border-radius:20px;font-size:13px;cursor:pointer;white-space:nowrap;">⭐ 5 sao</button>
-                    <button class="star-filter-btn" onclick="filterByStar(4)" style="padding:8px 16px;background:white;border:2px solid #e2e8f0;border-radius:20px;font-size:13px;cursor:pointer;white-space:nowrap;">⭐ 4 sao</button>
-                    <button class="star-filter-btn" onclick="filterByStar(3)" style="padding:8px 16px;background:white;border:2px solid #e2e8f0;border-radius:20px;font-size:13px;cursor:pointer;white-space:nowrap;">⭐ 3 sao</button>
-                    <button class="star-filter-btn" onclick="filterByStar(2)" style="padding:8px 16px;background:white;border:2px solid #e2e8f0;border-radius:20px;font-size:13px;cursor:pointer;white-space:nowrap;">⭐ 2 sao</button>
-                    <button class="star-filter-btn" onclick="filterByStar(1)" style="padding:8px 16px;background:white;border:2px solid #e2e8f0;border-radius:20px;font-size:13px;cursor:pointer;white-space:nowrap;">⭐ 1 sao</button>
-                </div>
-                <div style="display:flex;gap:8px;margin-bottom:15px;overflow-x:auto;padding-bottom:5px;">
-                    <button class="filter-btn active" onclick="filterReviews('all')" style="padding:8px 16px;background:#1e3c72;color:white;border:2px solid #1e3c72;border-radius:20px;font-size:13px;cursor:pointer;white-space:nowrap;">Tất cả</button>
-                    <button class="filter-btn" onclick="filterReviews('food')" style="padding:8px 16px;background:white;border:2px solid #e2e8f0;border-radius:20px;font-size:13px;cursor:pointer;white-space:nowrap;">🍽️ Quán ăn</button>
-                    <button class="filter-btn" onclick="filterReviews('wc')" style="padding:8px 16px;background:white;border:2px solid #e2e8f0;border-radius:20px;font-size:13px;cursor:pointer;white-space:nowrap;">🚻 Nhà vệ sinh</button>
-                    <button class="filter-btn" onclick="filterReviews('other')" style="padding:8px 16px;background:white;border:2px solid #e2e8f0;border-radius:20px;font-size:13px;cursor:pointer;white-space:nowrap;">📌 Khác</button>
-                </div>
-                <div id="reviewList"></div>
-            </div>
-
-            <div id="voucher-content" class="tab-content">
-                <div id="voucherList"></div>
-            </div>
-
-            <div id="admin-content" class="tab-content">
-                <div class="admin-panel">
-                    <div class="admin-section">
-                        <h3>⚙️ Quản lý Check-in</h3>
-                        <button class="admin-btn" onclick="adminResetCheckin()">🔄 Reset tiến độ check-in hiện tại</button>
-                        <button class="admin-btn" onclick="adminResetAll()">🗑️ Reset toàn bộ dữ liệu</button>
-                    </div>
-
-                    <div class="admin-section">
-                        <h3>🎁 Yêu cầu sử dụng Voucher</h3>
-                        <div id="adminVoucherUsage"></div>
-                    </div>
-
-                    <div class="admin-section">
-                        <h3>🔍 Tìm voucher đã dùng</h3>
-                        <div style="display:flex;gap:8px;margin-bottom:10px;">
-                            <input type="text" id="searchUsername" class="admin-input" placeholder="Nhập tên người dùng" style="flex:1;">
-                            <button class="admin-btn" onclick="adminSearchUser()" style="flex:0;white-space:nowrap;">Tìm kiếm</button>
-                        </div>
-                        <div id="userVoucherList"></div>
-                    </div>
-
-                    <div class="admin-section" id="adminReports">
-                        <h3>⚠️ Báo cáo vi phạm</h3>
-                        <div id="adminReportsList"></div>
-                    </div>
-
-                    <div class="admin-section">
-                        <h3>🎁 Thêm Voucher</h3>
-                        <input type="text" class="admin-input" id="voucherTitle" placeholder="Tên voucher (VD: Giảm 30k Trà Đé)">
-                        <input type="text" class="admin-input" id="voucherValue" placeholder="Giá trị (VD: 30K)">
-                        <input type="text" class="admin-input" id="voucherDesc" placeholder="Mô tả điều kiện">
-                        <input type="number" class="admin-input" id="voucherRequired" placeholder="Số điểm yêu cầu">
-                        <input type="text" class="admin-input" id="voucherBadge" placeholder="Icon (VD: 🎁)">
-                        <button class="admin-btn" style="background:#10b981;" onclick="adminAddVoucher()">✅ Thêm Voucher</button>
-                    </div>
-
-                    <div class="admin-section">
-                        <h3>🏆 Thêm Huy Hiệu</h3>
-                        <input type="text" class="admin-input" id="badgeName" placeholder="Tên huy hiệu">
-                        <input type="number" class="admin-input" id="badgeRequired" placeholder="Số điểm yêu cầu">
-                        <input type="text" class="admin-input" id="badgeIcon" placeholder="Icon (VD: 💎)">
-                        <input type="text" class="admin-input" id="badgeImage" placeholder="Tên file ảnh (VD: diamond.png)">
-                        <button class="admin-btn" style="background:#10b981;" onclick="adminAddBadge()">✅ Thêm Huy Hiệu</button>
-                    </div>
-                </div>
-            </div>
-        </div>
+      </div>
     </div>
 
-    <button class="qr-scan-btn" id="qrScanBtn" onclick="openQRScanner()" style="display: none;">📷</button>
-    <button style="position:fixed;bottom:20px;left:20px;width:60px;height:60px;background:linear-gradient(135deg,#10b981 0%,#059669 100%);border:none;border-radius:50%;color:white;font-size:28px;cursor:pointer;box-shadow:0 8px 25px rgba(16,185,129,0.4);z-index:999;display:none;" id="createReviewBtn" onclick="openReviewForm()">✏️</button>
+    <button
+      class="qr-scan-btn"
+      id="qrScanBtn"
+      onclick="openQRScanner()"
+      type="button"
+      style="display: none"
+      aria-label="Mở máy quét QR"
+    >
+      <span class="qr-scan-btn-icon">📷</span>
+      <!-- NEW: Bong bóng thoại -->
+      <span class="qr-scan-bubble">
+        <span class="qr-scan-btn-text">Quét QR</span>
+      </span>
+    </button>
+
+    <button
+      style="
+        position: fixed;
+        bottom: 20px;
+        left: 20px;
+        width: 60px;
+        height: 60px;
+        background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+        border: none;
+        border-radius: 50%;
+        color: white;
+        font-size: 28px;
+        cursor: pointer;
+        box-shadow: 0 8px 25px rgba(16, 185, 129, 0.4);
+        z-index: 999;
+        display: none;
+      "
+      id="createReviewBtn"
+      onclick="openReviewForm()"
+    >
+      ✏️
+    </button>
 
     <!-- Review Form Modal -->
     <div class="modal" id="reviewFormModal">
-        <div class="modal-content">
-            <button class="close-btn" onclick="closeReviewForm()">×</button>
-            <h3 style="color:#1e3c72;margin-bottom:15px;font-size:18px;">✍️ Viết đánh giá</h3>
-            <select id="reviewCategory" style="width:100%;padding:10px;border:2px solid #e2e8f0;border-radius:10px;font-size:14px;margin-bottom:10px;">
-                <option value="">Chọn loại địa điểm</option>
-                <option value="food">🍽️ Quán ăn</option>
-                <option value="wc">🚻 Nhà vệ sinh</option>
-                <option value="other">📌 Khác</option>
-            </select>
-            <input type="text" id="reviewLocationName" placeholder="Tên địa điểm (VD: Quán xôi cổng 2)" style="width:100%;padding:10px;border:2px solid #e2e8f0;border-radius:10px;font-size:14px;margin-bottom:10px;">
-            <div id="ratingInput" style="display:flex;gap:8px;margin-bottom:10px;font-size:24px;">
-                <span data-rating="1" style="cursor:pointer;color:#d1d5db;">★</span>
-                <span data-rating="2" style="cursor:pointer;color:#d1d5db;">★</span>
-                <span data-rating="3" style="cursor:pointer;color:#d1d5db;">★</span>
-                <span data-rating="4" style="cursor:pointer;color:#d1d5db;">★</span>
-                <span data-rating="5" style="cursor:pointer;color:#d1d5db;">★</span>
-            </div>
-            <textarea id="reviewText" placeholder="Viết đánh giá của bạn..." style="width:100%;padding:10px;border:2px solid #e2e8f0;border-radius:10px;font-size:14px;margin-bottom:10px;min-height:100px;resize:vertical;"></textarea>
-            <div style="margin-bottom:10px;">
-                <input type="file" id="reviewImageInput" accept="image/*" style="display:none;">
-                <label for="reviewImageInput" style="display:inline-block;padding:10px 20px;background:#e0f2fe;color:#1e3c72;border-radius:10px;cursor:pointer;font-size:14px;">📷 Thêm ảnh</label>
-                <img id="imagePreview" style="max-width:200px;max-height:200px;border-radius:10px;margin-top:10px;display:none;">
-            </div>
-            <button onclick="submitReview()" style="width:100%;padding:12px;background:linear-gradient(135deg,#10b981 0%,#059669 100%);color:white;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;">Đăng đánh giá</button>
+      <div class="modal-content">
+        <button class="close-btn" onclick="closeReviewForm()">×</button>
+        <h3 style="color: #1e3c72; margin-bottom: 15px; font-size: 18px">
+          ✍️ Viết đánh giá
+        </h3>
+        <select
+          id="reviewCategory"
+          style="
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 10px;
+          "
+        >
+          <option value="">Chọn loại địa điểm</option>
+          <option value="food">🍽️ Quán ăn</option>
+          <option value="wc">🚻 Nhà vệ sinh</option>
+          <option value="other">📌 Khác</option>
+        </select>
+        <input
+          type="text"
+          id="reviewLocationName"
+          placeholder="Tên địa điểm (VD: Quán xôi cổng 2)"
+          style="
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 10px;
+          "
+        />
+        <div
+          id="ratingInput"
+          style="display: flex; gap: 8px; margin-bottom: 10px; font-size: 24px"
+        >
+          <span data-rating="1" style="cursor: pointer; color: #d1d5db">★</span>
+          <span data-rating="2" style="cursor: pointer; color: #d1d5db">★</span>
+          <span data-rating="3" style="cursor: pointer; color: #d1d5db">★</span>
+          <span data-rating="4" style="cursor: pointer; color: #d1d5db">★</span>
+          <span data-rating="5" style="cursor: pointer; color: #d1d5db">★</span>
         </div>
+        <textarea
+          id="reviewText"
+          placeholder="Viết đánh giá của bạn..."
+          style="
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 10px;
+            min-height: 100px;
+            resize: vertical;
+          "
+        ></textarea>
+        <div style="margin-bottom: 10px">
+          <input
+            type="file"
+            id="reviewImageInput"
+            accept="image/*"
+            style="display: none"
+          />
+          <label
+            for="reviewImageInput"
+            style="
+              display: inline-block;
+              padding: 10px 20px;
+              background: #e0f2fe;
+              color: #1e3c72;
+              border-radius: 10px;
+              cursor: pointer;
+              font-size: 14px;
+            "
+            >📷 Thêm ảnh</label
+          >
+          <img
+            id="imagePreview"
+            style="
+              max-width: 200px;
+              max-height: 200px;
+              border-radius: 10px;
+              margin-top: 10px;
+              display: none;
+            "
+          />
+        </div>
+        <button
+          onclick="submitReview()"
+          style="
+            width: 100%;
+            padding: 12px;
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+          "
+        >
+          Đăng đánh giá
+        </button>
+      </div>
     </div>
 
     <!-- Report Modal -->
     <div class="modal" id="reportModal">
-        <div class="modal-content">
-            <button class="close-btn" onclick="closeReportModal()">×</button>
-            <h3 style="color:#ef4444;margin-bottom:15px;font-size:18px;">⚠️ Báo cáo vi phạm</h3>
-            <input type="hidden" id="reportContentType">
-            <textarea id="reportReason" placeholder="Nhập lý do báo cáo..." style="width:100%;padding:10px;border:2px solid #e2e8f0;border-radius:10px;font-size:14px;margin-bottom:10px;min-height:100px;resize:vertical;"></textarea>
-            <button onclick="submitReport()" style="width:100%;padding:12px;background:#ef4444;color:white;border:none;border-radius:10px;font-size:15px;font-weight:600;cursor:pointer;">Gửi báo cáo</button>
-        </div>
+      <div class="modal-content">
+        <button class="close-btn" onclick="closeReportModal()">×</button>
+        <h3 style="color: #ef4444; margin-bottom: 15px; font-size: 18px">
+          ⚠️ Báo cáo vi phạm
+        </h3>
+        <input type="hidden" id="reportContentType" />
+        <textarea
+          id="reportReason"
+          placeholder="Nhập lý do báo cáo..."
+          style="
+            width: 100%;
+            padding: 10px;
+            border: 2px solid #e2e8f0;
+            border-radius: 10px;
+            font-size: 14px;
+            margin-bottom: 10px;
+            min-height: 100px;
+            resize: vertical;
+          "
+        ></textarea>
+        <button
+          onclick="submitReport()"
+          style="
+            width: 100%;
+            padding: 12px;
+            background: #ef4444;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 15px;
+            font-weight: 600;
+            cursor: pointer;
+          "
+        >
+          Gửi báo cáo
+        </button>
+      </div>
     </div>
 
     <!-- QR Scanner Modal -->
-    <div class="modal" id="qrScannerModal">
-        <div class="modal-content">
-            <button class="close-btn" onclick="closeQRScanner()">×</button>
-            <h2 style="color: #1e3c72; margin-bottom: 15px; font-size: 20px;">📷 Quét mã QR</h2>
-            <div id="qrScanner"></div>
-            <div style="text-align:center; margin-top:15px; color:#64748b; font-size:13px;">
-                Đưa camera đến mã QR để check-in
-            </div>
-            <div class="manual-input">
-                <input type="text" id="manualQRInput" placeholder="Hoặc nhập mã QR thủ công">
-                <button onclick="manualQRSubmit()">Xác nhận</button>
-            </div>
+    <div class="modal" id="qrScannerModal" aria-hidden="true">
+      <div
+        class="modal-content qr-modal-content"
+        role="dialog"
+        aria-modal="true"
+        aria-labelledby="qrModalTitle"
+      >
+        <button
+          class="close-btn"
+          onclick="closeQRScanner()"
+          type="button"
+          aria-label="Đóng"
+        >
+          ×
+        </button>
+
+        <div class="qr-modal-header">
+          <div class="qr-modal-badge">NAVIGO CHECK-IN</div>
+          <h2 id="qrModalTitle" class="qr-modal-title">📷 Quét mã QR</h2>
+          <p class="qr-modal-subtitle">
+            Đưa camera vào đúng khung để nhận diện mã QR của địa điểm.
+          </p>
         </div>
+
+        <div class="qr-scanner-shell">
+          <div class="qr-scanner-frame">
+            <div id="qrScanner"></div>
+            <div class="scanner-corners corner-top-left"></div>
+            <div class="scanner-corners corner-top-right"></div>
+            <div class="scanner-corners corner-bottom-left"></div>
+            <div class="scanner-corners corner-bottom-right"></div>
+          </div>
+        </div>
+
+        <div class="qr-help-text">
+          Hỗ trợ quét mã text hoặc link URL của website.
+        </div>
+
+        <div class="manual-input qr-manual-section">
+          <label for="manualQRInput" class="qr-manual-label"
+            >Nhập mã thủ công</label
+          >
+          <div class="qr-manual-row">
+            <input
+              type="text"
+              id="manualQRInput"
+              placeholder="VD: QR_LIBRARY hoặc https://navigo-app.netlify.app/?location=library&qr=QR_LIBRARY"
+              autocomplete="off"
+            />
+            <button onclick="manualQRSubmit()" type="button">Xác nhận</button>
+          </div>
+        </div>
+      </div>
     </div>
 
     <!-- Image Popup -->
     <div
-    class="badge-popup-overlay"
-    id="badgePopupOverlay"
-    onclick="closeBadgePopup()"
+      class="badge-popup-overlay"
+      id="badgePopupOverlay"
+      onclick="closeBadgePopup()"
     ></div>
 
     <img
-    class="badge-popup-image"
-    id="badgePopupImage"
-    onclick="closeBadgePopup()"
+      class="badge-popup-image"
+      id="badgePopupImage"
+      onclick="closeBadgePopup()"
     />
 
     <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
     <script src="app.js"></script>
-
-</body>
+  </body>
 </html>
