@@ -743,7 +743,7 @@ body {
     display: flex;
     align-items: center;
     justify-content: center;
-    font-size: 33px;
+    font-size: 30px;
     transform: translateY(-7px); /* - là lên, + là xuống */
 }
 
@@ -992,3 +992,4 @@ body {
         width: 100%;
     }
 }
+
