@@ -171,9 +171,3 @@ This app uses browser storage heavily. Common keys include:
 - `reviews`, `comments`, `reactions`, `reports`
 - `notifications`
 - `userSessionId` (anonymous identity for reactions/comments notifications)
-
----
-
-## License
-
-No license file yet. Add a `LICENSE` if you want to specify usage terms (MIT, Apache-2.0, etc.).
